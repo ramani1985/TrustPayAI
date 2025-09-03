@@ -1,0 +1,537 @@
+openapi: 3.0.3
+info:
+  title: TrustPay AI - Mini Payment Gateway API
+  description: |
+    A production-ready mini payment gateway proxy with LLM-powered risk assessment.
+    Built following MACH architecture principles (Microservices, API-first, Cloud-native, Headless).
+    
+    ## Features
+    - AI-powered fraud risk assessment
+    - Multi-provider payment processing (Stripe, PayPal)
+    - Event-driven architecture
+    - Real-time transaction monitoring
+    - Comprehensive logging and analytics
+    
+    ## Risk Assessment
+    The system evaluates transactions based on:
+    - Transaction amount (large amounts increase risk)
+    - Email domain analysis (suspicious domains flagged)
+    - Payment source validation
+    - Historical patterns
+    
+    Risk scores range from 0.0 (low risk) to 1.0 (high risk).
+    Transactions with scores ≥ 0.5 are automatically blocked.
+  version: 1.0.0
+  contact:
+    name: TrustPay AI Support
+    email: support@trustpay-ai.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3001
+    description: Development server
+  - url: https://api.trustpay-ai.com
+    description: Production server
+
+paths:
+  /api/charge:
+    post:
+      summary: Process a payment charge
+      description: |
+        Processes a payment charge with AI-powered risk assessment.
+        The system evaluates the transaction for fraud risk and either
+        processes the payment or blocks it based on the risk score.
+      operationId: processCharge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChargeRequest'
+            examples:
+              low_risk:
+                summary: Low Risk Transaction
+                value:
+                  amount: 1000
+                  currency: "USD"
+                  source: "tok_visa_1234"
+                  email: "customer@example.com"
+              high_risk:
+                summary: High Risk Transaction
+                value:
+                  amount: 10000
+                  currency: "USD"
+                  source: "tok_test"
+                  email: "user@example.ru"
+      responses:
+        '200':
+          description: Payment processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChargeResponse'
+              examples:
+                success:
+                  summary: Successful Payment
+                  value:
+                    transactionId: "txn_abc123"
+                    provider: "stripe"
+                    status: "success"
+                    riskScore: 0.32
+                    explanation: "Transaction approved with low risk score. No suspicious patterns detected."
+                blocked:
+                  summary: Blocked Payment
+                  value:
+                    transactionId: "txn_def456"
+                    provider: "none"
+                    status: "blocked"
+                    riskScore: 0.78
+                    explanation: "Transaction blocked due to high risk score. Multiple risk factors identified including large amount and suspicious email domain."
+                failed:
+                  summary: Failed Payment
+                  value:
+                    transactionId: "txn_ghi789"
+                    provider: "paypal"
+                    status: "failed"
+                    riskScore: 0.45
+                    explanation: "Payment processing failed due to invalid payment source. Please verify your payment information."
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Invalid request data"
+                details:
+                  - field: "amount"
+                    message: "Amount must be at least 1 cent"
+                  - field: "email"
+                    message: "Invalid email format"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Internal server error"
+
+  /api/transactions:
+    get:
+      summary: Get transaction history
+      description: |
+        Retrieves a paginated list of transactions with optional filtering.
+        Returns transaction details including risk scores, explanations, and metadata.
+      operationId: getTransactions
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of transactions to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Number of transactions to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: status
+          in: query
+          description: Filter by transaction status
+          required: false
+          schema:
+            type: string
+            enum: [success, failed, blocked]
+        - name: provider
+          in: query
+          description: Filter by payment provider
+          required: false
+          schema:
+            type: string
+            enum: [stripe, paypal]
+      responses:
+        '200':
+          description: Transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionsResponse'
+              example:
+                transactions:
+                  - id: "txn_abc123"
+                    amount: 1000
+                    currency: "USD"
+                    source: "tok_visa_1234"
+                    email: "customer@example.com"
+                    provider: "stripe"
+                    status: "success"
+                    riskScore: 0.32
+                    explanation: "Transaction approved with low risk score."
+                    timestamp: "2023-01-01T12:00:00.000Z"
+                pagination:
+                  limit: 50
+                  offset: 0
+                  total: 1
+                  hasMore: false
+                stats:
+                  total: 1
+                  success: 1
+                  failed: 0
+                  blocked: 0
+                  byProvider:
+                    stripe: 1
+                    paypal: 0
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/health:
+    get:
+      summary: Health check endpoint
+      description: |
+        Returns the health status of the system and its components.
+        Useful for monitoring and load balancer health checks.
+      operationId: getHealth
+      responses:
+        '200':
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: "healthy"
+                timestamp: "2023-01-01T12:00:00.000Z"
+                version: "1.0.0"
+                environment: "production"
+                services:
+                  database: "connected"
+                  eventBus: "active"
+                  llm: "configured"
+                  paymentProviders:
+                    stripe: "configured"
+                    paypal: "configured"
+        '500':
+          description: System is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: "unhealthy"
+                timestamp: "2023-01-01T12:00:00.000Z"
+                error: "Database connection failed"
+
+components:
+  schemas:
+    ChargeRequest:
+      type: object
+      required:
+        - amount
+        - currency
+        - source
+        - email
+      properties:
+        amount:
+          type: integer
+          description: Amount in cents (e.g., 1000 = $10.00)
+          minimum: 1
+          maximum: 10000000
+          example: 1000
+        currency:
+          type: string
+          description: 3-letter currency code (ISO 4217)
+          pattern: '^[A-Z]{3}$'
+          example: "USD"
+        source:
+          type: string
+          description: Payment source identifier (token, card number, etc.)
+          minLength: 1
+          maxLength: 100
+          example: "tok_visa_1234"
+        email:
+          type: string
+          description: Customer email address
+          format: email
+          maxLength: 254
+          example: "customer@example.com"
+
+    ChargeResponse:
+      type: object
+      required:
+        - transactionId
+        - provider
+        - status
+        - riskScore
+        - explanation
+      properties:
+        transactionId:
+          type: string
+          description: Unique transaction identifier
+          example: "txn_abc123"
+        provider:
+          type: string
+          description: Payment provider used
+          enum: [stripe, paypal, none]
+          example: "stripe"
+        status:
+          type: string
+          description: Transaction status
+          enum: [success, failed, blocked]
+          example: "success"
+        riskScore:
+          type: number
+          description: Risk score from 0.0 (low risk) to 1.0 (high risk)
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.32
+        explanation:
+          type: string
+          description: Human-readable explanation of the risk assessment
+          example: "Transaction approved with low risk score. No suspicious patterns detected."
+
+    Transaction:
+      type: object
+      required:
+        - id
+        - amount
+        - currency
+        - source
+        - email
+        - provider
+        - status
+        - riskScore
+        - explanation
+        - timestamp
+      properties:
+        id:
+          type: string
+          description: Unique transaction identifier
+          example: "txn_abc123"
+        amount:
+          type: integer
+          description: Amount in cents
+          example: 1000
+        currency:
+          type: string
+          description: 3-letter currency code
+          example: "USD"
+        source:
+          type: string
+          description: Payment source identifier
+          example: "tok_visa_1234"
+        email:
+          type: string
+          description: Customer email address
+          example: "customer@example.com"
+        provider:
+          type: string
+          description: Payment provider used
+          enum: [stripe, paypal]
+          example: "stripe"
+        status:
+          type: string
+          description: Transaction status
+          enum: [success, failed, blocked]
+          example: "success"
+        riskScore:
+          type: number
+          description: Risk score from 0.0 to 1.0
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.32
+        explanation:
+          type: string
+          description: Risk assessment explanation
+          example: "Transaction approved with low risk score."
+        timestamp:
+          type: string
+          format: date-time
+          description: Transaction timestamp
+          example: "2023-01-01T12:00:00.000Z"
+        metadata:
+          type: object
+          description: Additional transaction metadata
+          additionalProperties: true
+
+    TransactionsResponse:
+      type: object
+      required:
+        - transactions
+        - pagination
+        - stats
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        pagination:
+          type: object
+          required:
+            - limit
+            - offset
+            - total
+            - hasMore
+          properties:
+            limit:
+              type: integer
+              description: Maximum number of transactions returned
+              example: 50
+            offset:
+              type: integer
+              description: Number of transactions skipped
+              example: 0
+            total:
+              type: integer
+              description: Total number of transactions
+              example: 100
+            hasMore:
+              type: boolean
+              description: Whether more transactions are available
+              example: true
+        stats:
+          type: object
+          required:
+            - total
+            - success
+            - failed
+            - blocked
+            - byProvider
+          properties:
+            total:
+              type: integer
+              description: Total number of transactions
+              example: 100
+            success:
+              type: integer
+              description: Number of successful transactions
+              example: 85
+            failed:
+              type: integer
+              description: Number of failed transactions
+              example: 10
+            blocked:
+              type: integer
+              description: Number of blocked transactions
+              example: 5
+            byProvider:
+              type: object
+              description: Transaction count by provider
+              additionalProperties:
+                type: integer
+              example:
+                stripe: 60
+                paypal: 40
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          description: Overall system health status
+          enum: [healthy, unhealthy]
+          example: "healthy"
+        timestamp:
+          type: string
+          format: date-time
+          description: Health check timestamp
+          example: "2023-01-01T12:00:00.000Z"
+        version:
+          type: string
+          description: Application version
+          example: "1.0.0"
+        environment:
+          type: string
+          description: Environment name
+          example: "production"
+        services:
+          type: object
+          description: Individual service health status
+          properties:
+            database:
+              type: string
+              description: Database connection status
+              example: "connected"
+            eventBus:
+              type: string
+              description: Event bus status
+              example: "active"
+            llm:
+              type: string
+              description: LLM service status
+              example: "configured"
+            paymentProviders:
+              type: object
+              description: Payment provider status
+              properties:
+                stripe:
+                  type: string
+                  example: "configured"
+                paypal:
+                  type: string
+                  example: "configured"
+        error:
+          type: string
+          description: Error message if unhealthy
+          example: "Database connection failed"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Invalid request data"
+        details:
+          type: array
+          description: Detailed validation errors
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "amount"
+              message:
+                type: string
+                example: "Amount must be at least 1 cent"
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: Payments
+    description: Payment processing operations
+  - name: Transactions
+    description: Transaction history and analytics
+  - name: Health
+    description: System health monitoring
