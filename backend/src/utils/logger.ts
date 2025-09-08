@@ -5,14 +5,15 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 const logger: Logger = pino({
   level: process.env.LOG_LEVEL || 'info',
-  transport: isDevelopment ? {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      translateTime: 'SYS:standard',
-      ignore: 'pid,hostname',
-    },
-  } : undefined,
+  // Disable transport to avoid worker thread issues in Next.js
+  // transport: isDevelopment ? {
+  //   target: 'pino-pretty',
+  //   options: {
+  //     colorize: true,
+  //     translateTime: 'SYS:standard',
+  //     ignore: 'pid,hostname',
+  //   },
+  // } : undefined,
   formatters: {
     level: (label) => {
       return { level: label };

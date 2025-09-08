@@ -6,11 +6,29 @@ export class LLMService {
   private openai: OpenAI | null = null;
 
   private constructor() {
-   // if (process.env.OPENAI_API_KEY) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    
+    if (!apiKey) {
+      logger.warn('OPENAI_API_KEY environment variable is not set. LLM features will be disabled.');
+      this.openai = null;
+      return;
+    }
+
+    if (apiKey === 'your_openai_api_key_here' || apiKey === 'openai_api_key') {
+      logger.warn('OPENAI_API_KEY is set to placeholder value. Please set a valid OpenAI API key.');
+      this.openai = null;
+      return;
+    }
+
+    try {
       this.openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
+        apiKey: apiKey,
       });
-    //}
+      logger.info('OpenAI client initialized successfully');
+    } catch (error) {
+      logger.error('Failed to initialize OpenAI client', error as Error);
+      this.openai = null;
+    }
   }
 
   public static getInstance(): LLMService {
@@ -18,6 +36,10 @@ export class LLMService {
       LLMService.instance = new LLMService();
     }
     return LLMService.instance;
+  }
+
+  public isConfigured(): boolean {
+    return this.openai !== null;
   }
 
   public async generateExplanation(
@@ -52,6 +74,11 @@ export class LLMService {
         Keep it professional and easy to understand for both technical and non-technical users.
       `;
 
+      logger.info('Making OpenAI API call', { 
+        model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+        promptLength: prompt.length 
+      });
+
       const completion = await this.openai.chat.completions.create({
         model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
         messages: [
@@ -75,7 +102,7 @@ export class LLMService {
       return explanation;
 
     } catch (error) {
-      logger.error('LLM explanation generation failed', error as Error);
+      
       return this.getFallbackExplanation(riskScore, factors, amount, email, status);
     }
   }

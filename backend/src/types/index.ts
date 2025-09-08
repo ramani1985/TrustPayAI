@@ -7,7 +7,7 @@ export interface ChargeRequest {
 
 export interface ChargeResponse {
   transactionId: string;
-  provider: 'stripe' | 'paypal';
+  provider: 'stripe' | 'paypal' | 'none';
   status: 'success' | 'failed' | 'blocked';
   riskScore: number;
   explanation: string;
@@ -20,7 +20,7 @@ export interface Transaction {
   currency: string;
   source: string;
   email: string;
-  provider: 'stripe' | 'paypal';
+  provider: 'stripe' | 'paypal' | 'none';
   status: 'success' | 'failed' | 'blocked';
   riskScore: number;
   explanation: string;
@@ -51,9 +51,9 @@ export interface PaymentProvider {
 }
 
 export interface EventBus {
-  emit(event: string, data: any): void;
-  on(event: string, handler: (data: any) => void): void;
-  off(event: string, handler: (data: any) => void): void;
+  emit(event: string, data: any): boolean;
+  on(event: string, handler: (data: any) => void): this;
+  off(event: string, handler: (data: any) => void): this;
 }
 
 export interface Logger {

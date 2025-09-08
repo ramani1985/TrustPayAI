@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Clock, CreditCard, Mail, DollarSign, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { fetchTransactions, clearError } from '@/store/slices/transactionsSlice';
 import { RootState, AppDispatch } from '@/store';
-import { Transaction } from '@/types';
 
 const TransactionsList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();

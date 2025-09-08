@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
+
+// Load environment variables from .env file
+require('dotenv').config();
+
 const nextConfig = {
   env: {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,

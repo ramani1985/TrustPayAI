@@ -17,7 +17,7 @@ class InMemoryEventBus extends EventEmitter implements EventBus {
     return InMemoryEventBus.instance;
   }
 
-  emit(event: string, data: any): void {
+  emit(event: string, data: any): boolean {
     const payload: EventPayload = {
       type: event,
       data,
@@ -26,17 +26,19 @@ class InMemoryEventBus extends EventEmitter implements EventBus {
     };
 
     logger.info(`Event emitted: ${event}`, { eventId: payload.id });
-    super.emit(event, payload);
+    return super.emit(event, payload);
   }
 
-  on(event: string, handler: (data: EventPayload) => void): void {
+  on(event: string, handler: (data: EventPayload) => void): this {
     logger.debug(`Event listener registered: ${event}`);
     super.on(event, handler);
+    return this;
   }
 
-  off(event: string, handler: (data: EventPayload) => void): void {
+  off(event: string, handler: (data: EventPayload) => void): this {
     logger.debug(`Event listener removed: ${event}`);
     super.off(event, handler);
+    return this;
   }
 }
 

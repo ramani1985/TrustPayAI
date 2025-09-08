@@ -7,7 +7,6 @@ import { CreditCard, Mail, DollarSign, Globe } from 'lucide-react';
 import { processCharge, clearCharge, clearError } from '@/store/slices/paymentSlice';
 import { addTransaction } from '@/store/slices/transactionsSlice';
 import { RootState, AppDispatch } from '@/store';
-import { ChargeRequest } from '@/types';
 
 const paymentSchema = z.object({
   amount: z

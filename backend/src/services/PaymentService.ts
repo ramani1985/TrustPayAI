@@ -57,7 +57,7 @@ class PayPalProvider implements PaymentProvider {
   name = 'paypal' as const;
 
   async processPayment(amount: number, currency: string, source: string) {
-    return new Promise((resolve) => {
+    return new Promise<{ success: boolean; transactionId?: string; error?: string }>((resolve) => {
       try {
         logger.info('Processing payment with PayPal', { amount, currency, source });
 
@@ -88,7 +88,7 @@ class PayPalProvider implements PaymentProvider {
 
         paypal.payment.create(payment, (error, payment) => {
           if (error) {
-            logger.error('PayPal payment error', error);
+            logger.error('PayPal payment error', error as unknown as Error);
             resolve({
               success: false,
               error: error.message || 'PayPal payment failed',

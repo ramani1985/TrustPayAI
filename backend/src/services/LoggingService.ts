@@ -39,7 +39,7 @@ export class LoggingService {
 
   public getTransactions(limit: number = 50, offset: number = 0, filters?: {
     status?: 'success' | 'failed' | 'blocked';
-    provider?: 'stripe' | 'paypal';
+    provider?: 'stripe' | 'paypal' | 'none';
   }): Transaction[] {
     let transactions = Array.from(this.transactions.values());
 
