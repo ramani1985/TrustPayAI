@@ -1,512 +1,183 @@
-# Deployment Guide
+# Vercel Deployment Guide for TrustPay AI
 
-This guide covers deploying TrustPay AI to various environments following production best practices.
-
-## 🏗️ Architecture Overview
-
-TrustPay AI follows MACH architecture principles and is designed for cloud-native deployment:
-
-- **Microservices**: Modular backend services
-- **API-first**: RESTful APIs with OpenAPI specification
-- **Cloud-native**: Containerized with Docker
-- **Headless**: Decoupled frontend and backend
+## Project Structure
+This is a monorepo with:
+- **Backend**: Next.js 14.2.32 with App Router (port 3001)
+- **Frontend**: Vite 4.5.14 React app (port 3000)
 
 ## 🚀 Deployment Options
 
-### 1. Docker Compose (Recommended for Development/Staging)
+### Option 1: Deploy Backend and Frontend Separately (Recommended)
 
-#### Prerequisites
-- Docker 20.10+
-- Docker Compose 2.0+
-- 4GB RAM minimum
-- 10GB disk space
+#### Deploy Backend to Vercel:
+1. **Connect Repository**: Link your GitHub repository to Vercel
+2. **Project Settings**:
+   - **Root Directory**: `backend`
+   - **Framework Preset**: `Next.js`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `.next`
+   - **Install Command**: `npm install`
+3. **Environment Variables** (add in Vercel dashboard):
+   ```
+   OPENAI_API_KEY=your_openai_api_key
+   STRIPE_SECRET_KEY=your_stripe_secret_key
+   PAYPAL_CLIENT_ID=your_paypal_client_id
+   PAYPAL_CLIENT_SECRET=your_paypal_client_secret
+   PAYPAL_MODE=sandbox
+   ```
+4. **Deploy**: Click "Deploy" and wait for build to complete
 
-#### Quick Start
+#### Deploy Frontend to Vercel:
+1. **Create New Project**: Create a separate Vercel project
+2. **Project Settings**:
+   - **Root Directory**: `frontend`
+   - **Framework Preset**: `Vite`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+   - **Install Command**: `npm install`
+3. **Environment Variables**:
+   ```
+   VITE_API_URL=https://your-backend-app.vercel.app
+   ```
+4. **Deploy**: Click "Deploy" and wait for build to complete
+
+### Option 2: Deploy as Monorepo (Advanced)
+
+If you want to deploy both together using the root `vercel.json`:
+1. Connect your GitHub repository to Vercel
+2. The `vercel.json` file will handle routing between backend and frontend
+3. Add all environment variables to the Vercel dashboard
+4. Deploy from the root directory
+
+## 📋 Pre-Deployment Checklist
+
+### Backend Checklist:
+- [ ] `src/app/layout.tsx` exists (required for App Router)
+- [ ] `src/app/page.tsx` exists (root page)
+- [ ] All API routes are in `src/app/api/` directory
+- [ ] `next.config.js` is properly configured
+- [ ] Environment variables are ready
+
+### Frontend Checklist:
+- [ ] `vite.config.ts` is properly configured
+- [ ] `src/vite-env.d.ts` exists for environment types
+- [ ] All dependencies are installed
+- [ ] Build command works locally (`npm run build`)
+
+## 🔧 Environment Variables
+
+### Backend Environment Variables
 ```bash
-# Clone repository
-git clone <repository-url>
-cd TrustPayAI
+# Required for OpenAI integration
+OPENAI_API_KEY=sk-your-openai-api-key
 
-# Copy environment file
-cp env.example .env
+# Required for Stripe payments
+STRIPE_SECRET_KEY=sk_test_your-stripe-secret-key
 
-# Edit environment variables
-nano .env
-
-# Start all services
-docker-compose up -d
-
-# Check health
-curl http://localhost:3001/api/health
-curl http://localhost:3000
+# Required for PayPal payments
+PAYPAL_CLIENT_ID=your-paypal-client-id
+PAYPAL_CLIENT_SECRET=your-paypal-client-secret
+PAYPAL_MODE=sandbox  # or 'live' for production
 ```
 
-#### Environment Configuration
-```env
-# Production Environment Variables
-NODE_ENV=production
-PORT=3001
-
-# OpenAI Configuration
-OPENAI_API_KEY=open_api_key
-OPENAI_MODEL=gpt-3.5-turbo
-
-# Payment Providers
-STRIPE_SECRET_KEY=sk_live_your_stripe_key
-PAYPAL_CLIENT_ID=your_paypal_client_id
-PAYPAL_CLIENT_SECRET=your_paypal_client_secret
-PAYPAL_MODE=live
-
-# Database
-POSTGRES_USER=trustpay
-POSTGRES_PASSWORD=secure_password_here
-DATABASE_URL=postgresql://trustpay:secure_password_here@postgres:5432/trustpay_ai
-
-# Security
-JWT_SECRET=your_jwt_secret_here
-ENCRYPTION_KEY=your_32_character_encryption_key
-
-# Logging
-LOG_LEVEL=info
-LOG_FORMAT=json
-```
-
-### 2. Kubernetes Deployment
-
-#### Prerequisites
-- Kubernetes cluster (1.20+)
-- kubectl configured
-- Helm 3.0+ (optional)
-
-#### Create Namespace
+### Frontend Environment Variables
 ```bash
-kubectl create namespace trustpay-ai
+# API endpoint for backend
+VITE_API_URL=https://your-backend-app.vercel.app
 ```
 
-#### Deploy with kubectl
-```bash
-# Apply configurations
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/configmap.yaml
-kubectl apply -f k8s/secrets.yaml
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/ingress.yaml
-```
+## 🐛 Troubleshooting
 
-#### Deploy with Helm
-```bash
-# Add Helm repository (if using custom charts)
-helm repo add trustpay-ai ./helm
+### Common Issues and Solutions:
 
-# Install with values
-helm install trustpay-ai ./helm \
-  --namespace trustpay-ai \
-  --values helm/values-production.yaml
-```
+#### 1. "Html should not be imported outside of pages/_document" Error
+**Solution**: This was fixed by:
+- Adding `src/app/layout.tsx` and `src/app/page.tsx` files
+- Removing deprecated `appDir` configuration from `next.config.js`
+- Ensuring proper App Router structure
 
-### 3. Cloud Platform Deployment
+#### 2. Build Failures
+**Check**:
+- All dependencies are installed (`npm install`)
+- Environment variables are set in Vercel dashboard
+- Build commands work locally
+- No TypeScript errors (`npm run build`)
 
-#### AWS ECS/Fargate
-```bash
-# Build and push images
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account>.dkr.ecr.us-east-1.amazonaws.com
-
-docker build -t trustpay-ai-backend ./backend
-docker build -t trustpay-ai-frontend ./frontend
-
-docker tag trustpay-ai-backend:latest <account>.dkr.ecr.us-east-1.amazonaws.com/trustpay-ai-backend:latest
-docker tag trustpay-ai-frontend:latest <account>.dkr.ecr.us-east-1.amazonaws.com/trustpay-ai-frontend:latest
-
-docker push <account>.dkr.ecr.us-east-1.amazonaws.com/trustpay-ai-backend:latest
-docker push <account>.dkr.ecr.us-east-1.amazonaws.com/trustpay-ai-frontend:latest
-
-# Deploy with ECS CLI or AWS Console
-```
-
-#### Google Cloud Run
-```bash
-# Build and deploy backend
-gcloud builds submit --tag gcr.io/PROJECT-ID/trustpay-ai-backend ./backend
-gcloud run deploy trustpay-ai-backend \
-  --image gcr.io/PROJECT-ID/trustpay-ai-backend \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated
-
-# Build and deploy frontend
-gcloud builds submit --tag gcr.io/PROJECT-ID/trustpay-ai-frontend ./frontend
-gcloud run deploy trustpay-ai-frontend \
-  --image gcr.io/PROJECT-ID/trustpay-ai-frontend \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated
-```
-
-#### Azure Container Instances
-```bash
-# Create resource group
-az group create --name trustpay-ai --location eastus
-
-# Deploy backend
-az container create \
-  --resource-group trustpay-ai \
-  --name trustpay-ai-backend \
-  --image <registry>/trustpay-ai-backend:latest \
-  --ports 3001 \
-  --environment-variables NODE_ENV=production
-
-# Deploy frontend
-az container create \
-  --resource-group trustpay-ai \
-  --name trustpay-ai-frontend \
-  --image <registry>/trustpay-ai-frontend:latest \
-  --ports 80
-```
-
-## 🔧 Production Configuration
-
-### Environment Variables
-
-#### Required Variables
-```env
-# Application
-NODE_ENV=production
-PORT=3001
-
-# Database
-DATABASE_URL=postgresql://user:password@host:5432/database
-
-# Payment Providers
-STRIPE_SECRET_KEY=sk_live_...
-PAYPAL_CLIENT_ID=...
-PAYPAL_CLIENT_SECRET=...
-PAYPAL_MODE=live
-
-# Security
-JWT_SECRET=your_secure_jwt_secret
-ENCRYPTION_KEY=your_32_character_key
-```
-
-#### Optional Variables
-```env
-# OpenAI (for enhanced explanations)
-OPENAI_API_KEY=open_api_key
-OPENAI_MODEL=gpt-3.5-turbo
-
-# Logging
-LOG_LEVEL=info
-LOG_FORMAT=json
-
-# Rate Limiting
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
-
-# Event Bus (for scaling)
-EVENT_BUS_TYPE=kafka
-KAFKA_BROKERS=localhost:9092
-```
-
-### Security Configuration
-
-#### SSL/TLS
-```nginx
-# Nginx configuration for SSL
-server {
-    listen 443 ssl http2;
-    server_name api.trustpay-ai.com;
-    
-    ssl_certificate /path/to/certificate.crt;
-    ssl_certificate_key /path/to/private.key;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
-    
-    location / {
-        proxy_pass http://backend:3001;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
+#### 3. CORS Issues
+**Solution**: CORS is configured in `next.config.js`:
+```javascript
+async headers() {
+  return [
+    {
+      source: '/api/:path*',
+      headers: [
+        { key: 'Access-Control-Allow-Origin', value: '*' },
+        { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
+        { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+      ],
+    },
+  ]
 }
 ```
 
-#### Security Headers
-```javascript
-// Backend security middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  }
-}));
-```
+#### 4. Frontend Can't Connect to Backend
+**Solution**:
+- Verify `VITE_API_URL` is set correctly
+- Check that backend is deployed and accessible
+- Ensure CORS is properly configured
 
-### Database Configuration
+#### 5. Environment Variables Not Working
+**Solution**:
+- Double-check variable names in Vercel dashboard
+- Ensure no typos in variable names
+- Redeploy after adding new environment variables
 
-#### PostgreSQL Production Setup
-```sql
--- Create production database
-CREATE DATABASE trustpay_ai_prod;
-CREATE USER trustpay_app WITH PASSWORD 'secure_password';
-GRANT ALL PRIVILEGES ON DATABASE trustpay_ai_prod TO trustpay_app;
+## 📊 Post-Deployment Steps
 
--- Configure connection pooling
--- In postgresql.conf:
-max_connections = 200
-shared_buffers = 256MB
-effective_cache_size = 1GB
-work_mem = 4MB
-maintenance_work_mem = 64MB
-```
-
-#### Connection Pooling
-```javascript
-// Database connection with pooling
-const { Pool } = require('pg');
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
-```
-
-## 📊 Monitoring & Observability
-
-### Health Checks
+### 1. Test Backend API
 ```bash
-# Application health
-curl http://localhost:3001/api/health
+# Test health endpoint
+curl https://your-backend-app.vercel.app/api/health
 
-# Database health
-curl http://localhost:3001/api/health/database
-
-# Payment provider health
-curl http://localhost:3001/api/health/providers
+# Test charge endpoint
+curl -X POST https://your-backend-app.vercel.app/api/charge \
+  -H "Content-Type: application/json" \
+  -d '{"amount":1000,"currency":"USD","source":"tok_test_visa","email":"test@example.com"}'
 ```
 
-### Logging Configuration
-```javascript
-// Structured logging with correlation IDs
-const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  formatters: {
-    level: (label) => ({ level: label }),
-  },
-  serializers: {
-    req: (req) => ({
-      method: req.method,
-      url: req.url,
-      headers: req.headers,
-      remoteAddress: req.remoteAddress,
-    }),
-    res: (res) => ({
-      statusCode: res.statusCode,
-    }),
-  },
-});
-```
+### 2. Test Frontend
+- Visit your frontend URL
+- Try making a payment
+- Check browser console for errors
+- Verify API calls are working
 
-### Metrics Collection
-```javascript
-// Prometheus metrics
-const promClient = require('prom-client');
+### 3. Monitor Performance
+- Check Vercel dashboard for build logs
+- Monitor function execution times
+- Set up error tracking if needed
 
-const httpRequestDuration = new promClient.Histogram({
-  name: 'http_request_duration_seconds',
-  help: 'Duration of HTTP requests in seconds',
-  labelNames: ['method', 'route', 'status_code'],
-});
+## 🔄 Continuous Deployment
 
-const transactionCounter = new promClient.Counter({
-  name: 'transactions_total',
-  help: 'Total number of transactions processed',
-  labelNames: ['status', 'provider'],
-});
-```
+### Automatic Deployments:
+- Push to `main` branch triggers automatic deployment
+- Each deployment gets a unique URL for testing
+- Production deployments use your custom domain
 
-## 🔄 CI/CD Pipeline
+### Manual Deployments:
+- Use Vercel CLI: `vercel --prod`
+- Or trigger from Vercel dashboard
 
-### GitHub Actions Deployment
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy to Production
+## 📚 Additional Resources
 
-on:
-  push:
-    branches: [main]
+- [Vercel Documentation](https://vercel.com/docs)
+- [Next.js Deployment Guide](https://nextjs.org/docs/deployment)
+- [Vite Deployment Guide](https://vitejs.dev/guide/static-deploy.html)
+- [Environment Variables in Vercel](https://vercel.com/docs/concepts/projects/environment-variables)
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Deploy to production
-        run: |
-          # Your deployment script
-          ./scripts/deploy.sh
-```
+## 🆘 Support
 
-### Deployment Script
-```bash
-#!/bin/bash
-# scripts/deploy.sh
-
-set -e
-
-echo "Starting deployment..."
-
-# Build and push images
-docker build -t trustpay-ai-backend ./backend
-docker build -t trustpay-ai-frontend ./frontend
-
-# Deploy to production
-kubectl apply -f k8s/production/
-kubectl rollout status deployment/trustpay-ai-backend
-kubectl rollout status deployment/trustpay-ai-frontend
-
-echo "Deployment completed successfully!"
-```
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-#### 1. Database Connection Issues
-```bash
-# Check database connectivity
-docker exec -it trustpay-ai-postgres psql -U trustpay -d trustpay_ai -c "SELECT 1;"
-
-# Check connection string
-echo $DATABASE_URL
-```
-
-#### 2. Payment Provider Issues
-```bash
-# Test Stripe connectivity
-curl -u sk_test_...: https://api.stripe.com/v1/charges
-
-# Test PayPal connectivity
-curl -X POST https://api.sandbox.paypal.com/v1/oauth2/token
-```
-
-#### 3. Memory Issues
-```bash
-# Check container memory usage
-docker stats
-
-# Increase memory limits in docker-compose.yml
-services:
-  backend:
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-```
-
-### Performance Optimization
-
-#### 1. Database Optimization
-```sql
--- Add indexes for better performance
-CREATE INDEX CONCURRENTLY idx_transactions_created_at_status 
-ON transactions(created_at DESC, status);
-
--- Analyze query performance
-EXPLAIN ANALYZE SELECT * FROM transactions 
-WHERE created_at > NOW() - INTERVAL '1 day';
-```
-
-#### 2. Application Optimization
-```javascript
-// Enable compression
-app.use(compression());
-
-// Cache static assets
-app.use(express.static('public', {
-  maxAge: '1y',
-  etag: true
-}));
-
-// Connection pooling
-const pool = new Pool({
-  max: 20,
-  idleTimeoutMillis: 30000,
-});
-```
-
-## 📈 Scaling Considerations
-
-### Horizontal Scaling
-- Use load balancer (nginx, HAProxy)
-- Implement session affinity if needed
-- Scale database with read replicas
-- Use Redis for session storage
-
-### Vertical Scaling
-- Increase container memory/CPU limits
-- Optimize database configuration
-- Use faster storage (SSD)
-- Implement caching layers
-
-### Auto-scaling
-```yaml
-# Kubernetes HPA
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: trustpay-ai-backend-hpa
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: trustpay-ai-backend
-  minReplicas: 2
-  maxReplicas: 10
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
-```
-
-## 🔐 Security Checklist
-
-- [ ] Environment variables secured
-- [ ] SSL/TLS certificates configured
-- [ ] Security headers implemented
-- [ ] Rate limiting enabled
-- [ ] Input validation in place
-- [ ] SQL injection prevention
-- [ ] XSS protection enabled
-- [ ] CSRF protection configured
-- [ ] API authentication implemented
-- [ ] Logging and monitoring active
-- [ ] Regular security updates
-- [ ] Backup and recovery tested
-
-## 📞 Support
-
-For deployment issues:
-1. Check application logs
-2. Verify environment configuration
-3. Test health endpoints
-4. Review monitoring dashboards
-5. Contact support team
-
----
-
-This deployment guide ensures TrustPay AI is deployed securely and efficiently in production environments.
+If you encounter issues:
+1. Check the build logs in Vercel dashboard
+2. Verify all environment variables are set
+3. Test locally with `npm run build`
+4. Check the troubleshooting section above
