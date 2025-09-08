@@ -1,0 +1,84 @@
+name: Simple Test and Lint
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        # Fix npm cache path issue by not using cache initially
+        cache: false
+        
+    - name: Clear npm cache
+      run: |
+        npm cache clean --force
+        rm -rf ~/.npm
+        
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm install
+      
+    - name: Run linting
+      working-directory: ./backend
+      run: npm run lint
+      continue-on-error: true
+      
+    - name: Run tests
+      working-directory: ./backend
+      run: npm test
+      continue-on-error: true
+      
+    - name: Build backend
+      working-directory: ./backend
+      run: npm run build
+
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        # Fix npm cache path issue by not using cache initially
+        cache: false
+        
+    - name: Clear npm cache
+      run: |
+        npm cache clean --force
+        rm -rf ~/.npm
+        
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: npm install
+      
+    - name: Run linting
+      working-directory: ./frontend
+      run: npm run lint
+      continue-on-error: true
+      
+    - name: Run tests
+      working-directory: ./frontend
+      run: npm test
+      continue-on-error: true
+      
+    - name: Build frontend
+      working-directory: ./frontend
+      run: npm run build

@@ -4,6 +4,9 @@
 require('dotenv').config();
 
 const nextConfig = {
+  // Explicitly set output mode for Vercel
+  output: 'standalone',
+  
   env: {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
@@ -11,6 +14,7 @@ const nextConfig = {
     PAYPAL_CLIENT_SECRET: process.env.PAYPAL_CLIENT_SECRET,
     PAYPAL_MODE: process.env.PAYPAL_MODE,
   },
+  
   async headers() {
     return [
       {
