@@ -48,7 +48,7 @@ paths:
                       database:
                         type: string
                         example: connected
-                      openai:
+                      gemini:
                         type: string
                         example: connected
                       stripe:

@@ -55,7 +55,7 @@ curl -X GET "https://your-backend-app.vercel.app/api/health"
   "version": "1.0.0",
   "services": {
     "database": "connected",
-    "openai": "connected",
+    "gemini": "connected",
     "stripe": "connected",
     "paypal": "connected"
   }
@@ -437,7 +437,7 @@ setInterval(monitorPerformance, 60000);
 ### Integration Testing
 - [ ] Stripe integration works
 - [ ] PayPal integration works
-- [ ] OpenAI integration works
+- [ ] Gemini integration works
 - [ ] Database operations work
 - [ ] Event system works
 

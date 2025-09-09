@@ -5,7 +5,7 @@
 This document provides a comprehensive code review checklist for the TrustPayAI workspace - a production-ready mini payment gateway proxy with LLM-powered risk assessment, built following MACH architecture principles (Microservices, API-first, Cloud-native, Headless).
 
 **Tech Stack:**
-- **Backend**: Next.js 14, TypeScript, Zod validation, Pino logging, OpenAI integration
+- **Backend**: Next.js 14, TypeScript, Zod validation, Pino logging, Gemini integration
 - **Frontend**: React 18, Redux Toolkit, Tailwind CSS, React Hook Form, Vite
 - **Infrastructure**: Docker, Docker Compose, GitHub Actions CI/CD
 - **Testing**: Jest, Vitest, React Testing Library, Cypress E2E
@@ -306,7 +306,7 @@ This document provides a comprehensive code review checklist for the TrustPayAI 
 - [ ] **API route tests**: Test all API endpoints with various inputs
 - [ ] **Validation tests**: Test Zod schema validation
 - [ ] **Error handling**: Test error scenarios and edge cases
-- [ ] **Mocking**: Mock external dependencies (Stripe, PayPal, OpenAI)
+- [ ] **Mocking**: Mock external dependencies (Stripe, PayPal, Gemini)
 
 #### ✅ **Frontend Testing (Vitest)**
 - [ ] **Component tests**: Test React components with React Testing Library
@@ -484,7 +484,7 @@ This document provides a comprehensive code review checklist for the TrustPayAI 
 #### ✅ **Risk Assessment**
 - [ ] **Risk calculation**: Accurate risk score calculation
 - [ ] **Threshold management**: Proper risk threshold configuration
-- [ ] **LLM integration**: Correct OpenAI API usage with fallbacks
+- [ ] **LLM integration**: Correct Gemini API usage with fallbacks
 - [ ] **Fraud detection**: Comprehensive fraud detection logic
 - [ ] **Audit trails**: Complete audit trail for risk assessments
 

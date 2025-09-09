@@ -19,7 +19,7 @@ This is a monorepo with:
    - **Install Command**: `npm install`
 3. **Environment Variables** (add in Vercel dashboard):
    ```
-   OPENAI_API_KEY=your_openai_api_key
+   GEMINI_API_KEY=your_gemini_api_key
    STRIPE_SECRET_KEY=your_stripe_secret_key
    PAYPAL_CLIENT_ID=your_paypal_client_id
    PAYPAL_CLIENT_SECRET=your_paypal_client_secret
@@ -68,8 +68,8 @@ If you want to deploy both together using the root `vercel.json`:
 
 ### Backend Environment Variables
 ```bash
-# Required for OpenAI integration
-OPENAI_API_KEY=sk-your-openai-api-key
+# Required for Gemini integration
+GEMINI_API_KEY=your-gemini-api-key
 
 # Required for Stripe payments
 STRIPE_SECRET_KEY=sk_test_your-stripe-secret-key

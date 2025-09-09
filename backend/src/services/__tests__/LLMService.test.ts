@@ -1,23 +1,16 @@
 import { LLMService } from '../LLMService';
 
-// Mock OpenAI
-jest.mock('openai', () => {
+// Mock Google Generative AI
+jest.mock('@google/generative-ai', () => {
   return {
-    __esModule: true,
-    default: jest.fn().mockImplementation(() => ({
-      chat: {
-        completions: {
-          create: jest.fn().mockResolvedValue({
-            choices: [
-              {
-                message: {
-                  content: 'This is a mock LLM explanation for the transaction risk assessment.',
-                },
-              },
-            ],
-          }),
-        },
-      },
+    GoogleGenerativeAI: jest.fn().mockImplementation(() => ({
+      getGenerativeModel: jest.fn().mockReturnValue({
+        generateContent: jest.fn().mockResolvedValue({
+          response: {
+            text: jest.fn().mockReturnValue('This is a mock LLM explanation for the transaction risk assessment.'),
+          },
+        }),
+      }),
     })),
   };
 });
@@ -28,15 +21,15 @@ describe('LLMService', () => {
   beforeEach(() => {
     llmService = LLMService.getInstance();
     // Set mock API key
-    process.env.OPENAI_API_KEY = 'test-key';
+    process.env.GEMINI_API_KEY = 'test-key';
   });
 
   afterEach(() => {
-    delete process.env.OPENAI_API_KEY;
+    delete process.env.GEMINI_API_KEY;
   });
 
   describe('generateExplanation', () => {
-    it('should generate explanation with OpenAI when API key is available', async () => {
+    it('should generate explanation with Gemini when API key is available', async () => {
       const explanation = await llmService.generateExplanation(
         0.3,
         ['Large amount'],
@@ -48,8 +41,8 @@ describe('LLMService', () => {
       expect(explanation).toBe('This is a mock LLM explanation for the transaction risk assessment.');
     });
 
-    it('should use fallback explanation when OpenAI API key is not available', async () => {
-      delete process.env.OPENAI_API_KEY;
+    it('should use fallback explanation when Gemini API key is not available', async () => {
+      delete process.env.GEMINI_API_KEY;
       
       const explanation = await llmService.generateExplanation(
         0.3,
@@ -64,7 +57,7 @@ describe('LLMService', () => {
     });
 
     it('should generate appropriate fallback explanation for blocked transaction', async () => {
-      delete process.env.OPENAI_API_KEY;
+      delete process.env.GEMINI_API_KEY;
       
       const explanation = await llmService.generateExplanation(
         0.8,
@@ -80,7 +73,7 @@ describe('LLMService', () => {
     });
 
     it('should generate appropriate fallback explanation for failed transaction', async () => {
-      delete process.env.OPENAI_API_KEY;
+      delete process.env.GEMINI_API_KEY;
       
       const explanation = await llmService.generateExplanation(
         0.6,
@@ -96,7 +89,7 @@ describe('LLMService', () => {
     });
 
     it('should handle empty risk factors in fallback explanation', async () => {
-      delete process.env.OPENAI_API_KEY;
+      delete process.env.GEMINI_API_KEY;
       
       const explanation = await llmService.generateExplanation(
         0.1,
@@ -110,15 +103,13 @@ describe('LLMService', () => {
       expect(explanation).not.toContain('Risk factors considered:');
     });
 
-    it('should handle OpenAI API errors gracefully', async () => {
-      // Mock OpenAI to throw an error
-      const mockOpenAI = require('openai').default;
-      mockOpenAI.mockImplementation(() => ({
-        chat: {
-          completions: {
-            create: jest.fn().mockRejectedValue(new Error('API Error')),
-          },
-        },
+    it('should handle Gemini API errors gracefully', async () => {
+      // Mock Gemini to throw an error
+      const mockGemini = require('@google/generative-ai').GoogleGenerativeAI;
+      mockGemini.mockImplementation(() => ({
+        getGenerativeModel: jest.fn().mockReturnValue({
+          generateContent: jest.fn().mockRejectedValue(new Error('API Error')),
+        }),
       }));
 
       const explanation = await llmService.generateExplanation(

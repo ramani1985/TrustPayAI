@@ -45,7 +45,7 @@ Check if the API is running and healthy.
   "version": "1.0.0",
   "services": {
     "database": "connected",
-    "openai": "connected",
+    "gemini": "connected",
     "stripe": "connected",
     "paypal": "connected"
   }
@@ -386,7 +386,7 @@ result = api.process_payment(2500, "USD", "tok_test_visa", "customer@example.com
 
 - **Stripe**: Use test keys with `sk_test_` prefix
 - **PayPal**: Use sandbox credentials
-- **OpenAI**: Use test API key
+- **Gemini**: Use test API key
 
 ## Rate Limits
 

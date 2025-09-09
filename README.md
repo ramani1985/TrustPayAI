@@ -41,7 +41,7 @@ A production-ready mini payment gateway proxy with LLM-powered risk assessment, 
 - **Framework**: Next.js 14 with TypeScript
 - **Validation**: Zod schema validation
 - **Logging**: Pino structured logging
-- **AI**: OpenAI GPT integration with fallback templates
+- **AI**: Google Gemini integration with fallback templates
 - **Payments**: Stripe & PayPal SDKs
 - **Testing**: Jest with comprehensive test coverage
 - **Configuration**: Environment-based config with Next.js env support
@@ -66,7 +66,7 @@ A production-ready mini payment gateway proxy with LLM-powered risk assessment, 
 
 - Node.js 18+
 - Docker & Docker Compose
-- OpenAI API key (optional, fallback templates available)
+- Gemini API key (optional, fallback templates available)
 - PowerShell (for Windows users)
 
 ### Local Development
@@ -88,7 +88,7 @@ A production-ready mini payment gateway proxy with LLM-powered risk assessment, 
    ```bash
    cp env.example .env
    # The .env file will be automatically copied to backend/ and frontend/ directories
-   # Edit .env with your configuration (OpenAI API key, payment provider keys, etc.)
+   # Edit .env with your configuration (Gemini API key, payment provider keys, etc.)
    ```
 
 4. **Start development servers**
@@ -217,9 +217,9 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 PORT=3001
 NODE_ENV=production
 
-# OpenAI Configuration (optional)
-OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_MODEL=gpt-3.5-turbo
+# Gemini Configuration (optional)
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-1.5-flash
 
 # Payment Providers
 STRIPE_SECRET_KEY=sk_live_your_stripe_secret_key

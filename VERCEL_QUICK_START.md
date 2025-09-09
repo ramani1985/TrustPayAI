@@ -18,7 +18,7 @@ deploy.bat   # Windows
 5. **Framework**: `Next.js`
 6. **Environment Variables**:
    ```
-   OPENAI_API_KEY=your_key_here
+   GEMINI_API_KEY=your_key_here
    STRIPE_SECRET_KEY=your_key_here
    PAYPAL_CLIENT_ID=your_key_here
    PAYPAL_CLIENT_SECRET=your_key_here

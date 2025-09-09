@@ -6,7 +6,7 @@
 import '@testing-library/jest-dom'
 
 // Mock environment variables
-process.env.OPENAI_API_KEY = 'test-key'
+process.env.GEMINI_API_KEY = 'test-key'
 process.env.STRIPE_SECRET_KEY = 'sk_test_mock'
 process.env.PAYPAL_CLIENT_ID = 'mock-client-id'
 process.env.PAYPAL_CLIENT_SECRET = 'mock-client-secret'

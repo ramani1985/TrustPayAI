@@ -11,7 +11,7 @@ export async function GET() {
       services: {
         database: 'connected', // In production, check actual DB connection
         eventBus: 'active',
-        llm: process.env.OPENAI_API_KEY ? 'configured' : 'fallback',
+        llm: process.env.GEMINI_API_KEY ? 'configured' : 'fallback',
         paymentProviders: {
           stripe: process.env.STRIPE_SECRET_KEY ? 'configured' : 'not_configured',
           paypal: process.env.PAYPAL_CLIENT_ID ? 'configured' : 'not_configured',

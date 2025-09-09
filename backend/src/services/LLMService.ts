@@ -1,33 +1,31 @@
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import logger from '@/utils/logger';
 
 export class LLMService {
   private static instance: LLMService;
-  private openai: OpenAI | null = null;
+  private genAI: GoogleGenerativeAI | null = null;
 
   private constructor() {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey) {
-      logger.warn('OPENAI_API_KEY environment variable is not set. LLM features will be disabled.');
-      this.openai = null;
+      logger.warn('GEMINI_API_KEY environment variable is not set. LLM features will be disabled.');
+      this.genAI = null;
       return;
     }
 
-    if (apiKey === 'your_openai_api_key_here' || apiKey === 'openai_api_key') {
-      logger.warn('OPENAI_API_KEY is set to placeholder value. Please set a valid OpenAI API key.');
-      this.openai = null;
+    if (apiKey === 'your_gemini_api_key_here' || apiKey === 'gemini_api_key') {
+      logger.warn('GEMINI_API_KEY is set to placeholder value. Please set a valid Gemini API key.');
+      this.genAI = null;
       return;
     }
 
     try {
-      this.openai = new OpenAI({
-        apiKey: apiKey,
-      });
-      logger.info('OpenAI client initialized successfully');
+      this.genAI = new GoogleGenerativeAI(apiKey);
+      logger.info('Gemini client initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize OpenAI client', error as Error);
-      this.openai = null;
+      logger.error('Failed to initialize Gemini client', error as Error);
+      this.genAI = null;
     }
   }
 
@@ -39,7 +37,7 @@ export class LLMService {
   }
 
   public isConfigured(): boolean {
-    return this.openai !== null;
+    return this.genAI !== null;
   }
 
   public async generateExplanation(
@@ -50,7 +48,7 @@ export class LLMService {
     status: 'success' | 'failed' | 'blocked'
   ): Promise<string> {
     try {
-      if (!this.openai) {
+      if (!this.genAI) {
         return this.getFallbackExplanation(riskScore, factors, amount, email, status);
       }
 
@@ -74,35 +72,27 @@ export class LLMService {
         Keep it professional and easy to understand for both technical and non-technical users.
       `;
 
-      logger.info('Making OpenAI API call', { 
-        model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+      const model = this.genAI.getGenerativeModel({ 
+        model: process.env.GEMINI_MODEL || 'gemini-1.5-flash' 
+      });
+
+      logger.info('Making Gemini API call', { 
+        model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
         promptLength: prompt.length 
       });
 
-      const completion = await this.openai.chat.completions.create({
-        model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a professional financial risk analyst providing clear explanations for payment risk assessments.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        max_tokens: 200,
-        temperature: 0.3,
-      });
+      const result = await model.generateContent(
+        `You are a professional financial risk analyst providing clear explanations for payment risk assessments.\n\n${prompt}`
+      );
 
-      const explanation = completion.choices[0]?.message?.content?.trim() || 
+      const explanation = result.response.text()?.trim() || 
         this.getFallbackExplanation(riskScore, factors, amount, email, status);
 
       logger.info('LLM explanation generated', { explanationLength: explanation.length });
       return explanation;
 
     } catch (error) {
-      
+      logger.error('Error generating LLM explanation', error as Error);
       return this.getFallbackExplanation(riskScore, factors, amount, email, status);
     }
   }
