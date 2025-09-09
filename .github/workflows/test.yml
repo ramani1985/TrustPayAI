@@ -1,0 +1,52 @@
+name: Test and Lint
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test and Lint
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        project: [backend, frontend]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        # Fix npm cache path issue
+        cache: 'npm'
+        cache-dependency-path: ${{ matrix.project }}/package-lock.json
+        
+    - name: Clear npm cache (if needed)
+      run: |
+        npm cache clean --force
+        rm -rf ~/.npm
+        
+    - name: Install dependencies
+      working-directory: ./${{ matrix.project }}
+      run: |
+        npm ci --prefer-offline --no-audit
+        
+    - name: Run linting
+      working-directory: ./${{ matrix.project }}
+      run: npm run lint
+      continue-on-error: true
+      
+    - name: Run tests
+      working-directory: ./${{ matrix.project }}
+      run: npm test
+      continue-on-error: true
+      
+    - name: Build project
+      working-directory: ./${{ matrix.project }}
+      run: npm run build

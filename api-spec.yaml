@@ -1,0 +1,405 @@
+openapi: 3.0.3
+info:
+  title: TrustPay AI API
+  description: Payment gateway proxy with LLM-powered risk assessment
+  version: 1.0.0
+  contact:
+    name: TrustPay AI Support
+    email: support@trustpayai.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://your-backend-app.vercel.app
+    description: Production server
+  - url: http://localhost:3001
+    description: Development server
+
+paths:
+  /api/health:
+    get:
+      summary: Health Check
+      description: Check if the API is running and healthy
+      operationId: getHealth
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2024-01-15T10:30:00.000Z"
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  services:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        example: connected
+                      gemini:
+                        type: string
+                        example: connected
+                      stripe:
+                        type: string
+                        example: connected
+                      paypal:
+                        type: string
+                        example: connected
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/charge:
+    post:
+      summary: Process Payment
+      description: Process a payment with risk assessment and LLM-powered explanation
+      operationId: processPayment
+      tags:
+        - Payments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChargeRequest'
+            examples:
+              example1:
+                summary: Basic payment
+                value:
+                  amount: 2500
+                  currency: "USD"
+                  source: "tok_test_visa"
+                  email: "customer@example.com"
+      responses:
+        '200':
+          description: Payment processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChargeResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/transactions:
+    get:
+      summary: Get Transactions
+      description: Retrieve transaction history with filtering and pagination
+      operationId: getTransactions
+      tags:
+        - Transactions
+      parameters:
+        - name: limit
+          in: query
+          description: Number of transactions to return (1-100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Number of transactions to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: status
+          in: query
+          description: Filter by transaction status
+          required: false
+          schema:
+            type: string
+            enum: [success, failed, blocked]
+        - name: provider
+          in: query
+          description: Filter by payment provider
+          required: false
+          schema:
+            type: string
+            enum: [stripe, paypal, none]
+      responses:
+        '200':
+          description: Transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionsResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/transactions/{id}:
+    get:
+      summary: Get Transaction by ID
+      description: Retrieve a specific transaction by its ID
+      operationId: getTransactionById
+      tags:
+        - Transactions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Transaction ID
+          schema:
+            type: string
+            example: "txn_1705312200000_abc123def"
+      responses:
+        '200':
+          description: Transaction found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    ChargeRequest:
+      type: object
+      required:
+        - amount
+        - currency
+        - source
+        - email
+      properties:
+        amount:
+          type: integer
+          description: Amount in cents (e.g., 2500 = $25.00)
+          minimum: 1
+          maximum: 10000000
+          example: 2500
+        currency:
+          type: string
+          description: Currency code (uppercase)
+          pattern: '^[A-Z]{3}$'
+          example: "USD"
+        source:
+          type: string
+          description: Payment source (token, card number, etc.)
+          example: "tok_test_visa"
+        email:
+          type: string
+          format: email
+          description: Customer email address
+          example: "customer@example.com"
+
+    ChargeResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          description: Unique transaction identifier
+          example: "txn_1705312200000_abc123def"
+        provider:
+          type: string
+          enum: [stripe, paypal, none]
+          description: Payment provider used
+          example: "stripe"
+        status:
+          type: string
+          enum: [success, failed, blocked]
+          description: Transaction status
+          example: "success"
+        riskScore:
+          type: number
+          description: Risk score (0-100, lower is safer)
+          minimum: 0
+          maximum: 100
+          example: 15.5
+        explanation:
+          type: string
+          description: LLM-generated explanation of the decision
+          example: "Low risk transaction approved. Customer has a clean payment history and the amount is within normal limits for this type of transaction."
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique transaction identifier
+          example: "txn_1705312200000_abc123def"
+        amount:
+          type: integer
+          description: Amount in cents
+          example: 2500
+        currency:
+          type: string
+          description: Currency code
+          example: "USD"
+        source:
+          type: string
+          description: Payment source
+          example: "tok_test_visa"
+        email:
+          type: string
+          format: email
+          description: Customer email address
+          example: "customer@example.com"
+        provider:
+          type: string
+          enum: [stripe, paypal, none]
+          description: Payment provider used
+          example: "stripe"
+        status:
+          type: string
+          enum: [success, failed, blocked]
+          description: Transaction status
+          example: "success"
+        riskScore:
+          type: number
+          description: Risk score (0-100)
+          minimum: 0
+          maximum: 100
+          example: 15.5
+        explanation:
+          type: string
+          description: LLM-generated explanation
+          example: "Low risk transaction approved..."
+        timestamp:
+          type: string
+          format: date-time
+          description: Transaction timestamp
+          example: "2024-01-15T10:30:00.000Z"
+        metadata:
+          type: object
+          description: Additional transaction metadata
+          properties:
+            ipAddress:
+              type: string
+              example: "192.168.1.1"
+            userAgent:
+              type: string
+              example: "Mozilla/5.0..."
+            riskFactors:
+              type: array
+              items:
+                type: string
+              example: ["low_amount", "known_customer"]
+
+    TransactionsResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+              description: Total number of transactions
+              example: 150
+            limit:
+              type: integer
+              description: Number of transactions per page
+              example: 50
+            offset:
+              type: integer
+              description: Number of transactions skipped
+              example: 0
+            hasMore:
+              type: boolean
+              description: Whether there are more transactions
+              example: true
+        stats:
+          type: object
+          properties:
+            total:
+              type: integer
+              example: 150
+            success:
+              type: integer
+              example: 120
+            failed:
+              type: integer
+              example: 20
+            blocked:
+              type: integer
+              example: 10
+            byProvider:
+              type: object
+              properties:
+                stripe:
+                  type: integer
+                  example: 100
+                paypal:
+                  type: integer
+                  example: 40
+                none:
+                  type: integer
+                  example: 10
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Invalid request data"
+        details:
+          type: string
+          description: Additional error details
+          example: "Amount must be between 1 and 10000000 cents"
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication (optional)
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Payments
+    description: Payment processing endpoints
+  - name: Transactions
+    description: Transaction management endpoints

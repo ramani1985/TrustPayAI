@@ -1,0 +1,175 @@
+{
+  "info": {
+    "name": "TrustPay AI API",
+    "description": "Payment gateway proxy with LLM-powered risk assessment",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://your-backend-app.vercel.app",
+      "type": "string"
+    },
+    {
+      "key": "transactionId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Check if the API is running and healthy"
+      },
+      "response": []
+    },
+    {
+      "name": "Process Payment - Success",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": 2500,\n  \"currency\": \"USD\",\n  \"source\": \"tok_test_visa\",\n  \"email\": \"customer@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/charge",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "charge"]
+        },
+        "description": "Process a successful payment with low risk"
+      },
+      "response": []
+    },
+    {
+      "name": "Process Payment - High Risk",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": 5000000,\n  \"currency\": \"USD\",\n  \"source\": \"tok_test_visa\",\n  \"email\": \"suspicious@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/charge",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "charge"]
+        },
+        "description": "Process a payment that might be blocked due to high risk"
+      },
+      "response": []
+    },
+    {
+      "name": "Process Payment - Invalid Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": -100,\n  \"currency\": \"INVALID\",\n  \"source\": \"\",\n  \"email\": \"invalid-email\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/charge",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "charge"]
+        },
+        "description": "Test validation with invalid data"
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Transactions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/transactions",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "transactions"]
+        },
+        "description": "Get all transactions with default pagination"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Transactions - Filtered",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/transactions?limit=10&status=success&provider=stripe",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "transactions"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "status",
+              "value": "success"
+            },
+            {
+              "key": "provider",
+              "value": "stripe"
+            }
+          ]
+        },
+        "description": "Get filtered transactions"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Transaction by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/transactions/{{transactionId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "transactions", "{{transactionId}}"]
+        },
+        "description": "Get a specific transaction by ID"
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set transaction ID from previous response",
+          "if (pm.response && pm.response.json() && pm.response.json().transactionId) {",
+          "    pm.collectionVariables.set('transactionId', pm.response.json().transactionId);",
+          "}"
+        ]
+      }
+    }
+  ]
+}
