@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     // Evaluate risk
     const riskService = RiskService.getInstance();
-    const riskEvaluation = riskService.evaluateRisk(amount, email, source);
+    const riskEvaluation = await riskService.evaluateRisk(amount, email, source);
 
     // Emit risk evaluated event
     eventBus.emit(EVENTS.RISK_EVALUATED, {

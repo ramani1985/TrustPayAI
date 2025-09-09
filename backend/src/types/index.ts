@@ -32,6 +32,13 @@ export interface RiskEvaluation {
   score: number;
   factors: string[];
   recommendation: 'approve' | 'block';
+  level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  geminiAnalysis?: {
+    used: boolean;
+    confidence?: number;
+    detectedRisks?: string[];
+  };
+  fallbackUsed: boolean;
 }
 
 export interface EventPayload {

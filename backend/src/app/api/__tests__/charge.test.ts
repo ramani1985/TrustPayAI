@@ -54,10 +54,13 @@ describe('/api/charge', () => {
       });
 
       // Mock service responses
-      mockRiskService.evaluateRisk.mockReturnValue({
+      mockRiskService.evaluateRisk.mockResolvedValue({
         score: 0.2,
         factors: ['Low risk'],
         recommendation: 'approve',
+        level: 'LOW',
+        fallbackUsed: true,
+        geminiAnalysis: { used: false },
       });
 
       mockPaymentService.processPayment.mockResolvedValue({
@@ -109,10 +112,13 @@ describe('/api/charge', () => {
       });
 
       // Mock high risk evaluation
-      mockRiskService.evaluateRisk.mockReturnValue({
+      mockRiskService.evaluateRisk.mockResolvedValue({
         score: 0.8,
         factors: ['Large amount', 'Suspicious email domain'],
         recommendation: 'block',
+        level: 'HIGH',
+        fallbackUsed: true,
+        geminiAnalysis: { used: false },
       });
 
       mockLLMService.generateExplanation.mockResolvedValue('High risk transaction blocked');
@@ -155,10 +161,13 @@ describe('/api/charge', () => {
         },
       });
 
-      mockRiskService.evaluateRisk.mockReturnValue({
+      mockRiskService.evaluateRisk.mockResolvedValue({
         score: 0.3,
         factors: [],
         recommendation: 'approve',
+        level: 'MEDIUM',
+        fallbackUsed: true,
+        geminiAnalysis: { used: false },
       });
 
       mockPaymentService.processPayment.mockResolvedValue({
@@ -230,9 +239,7 @@ describe('/api/charge', () => {
       });
 
       // Mock service to throw error
-      mockRiskService.evaluateRisk.mockImplementation(() => {
-        throw new Error('Service error');
-      });
+      mockRiskService.evaluateRisk.mockRejectedValue(new Error('Service error'));
 
       const response = await POST(request);
       const data = await response.json();
